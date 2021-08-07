@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.8
 # -*- coding: utf-8 -*-
 """
 Simulates a chosen system
@@ -39,7 +39,7 @@ class Observations(object):
         # index represents most reset observation
         df = df[::-1]
         _dir = os.path.split(os.getcwd())[0]
-        df.to_csv(os.path.join(_dir, 'data/simulations', f'{name}.csv'))
+        df.to_csv(os.path.join(_dir, '../data/simulations', f'{name}.csv'))
         logging.info(f"*** Saved: observations {name}.csv")
 
 
