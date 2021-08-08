@@ -161,7 +161,7 @@ def save_graph(time_step, causal_graph, _variables):
     args = parser.parse_args()
 
     details = f'p_threshold: {args.pv}, tau: {args.tau}'
-    fig.suptitle(f'Time step {time_step}\n{details}')
+    fig.suptitle(f'Time step {time_step} - {details}')
 
     #plt.show()
     fig.savefig(os.path.join(os.getcwd(), 'tmp', f'graph_{time_step}.png'))
