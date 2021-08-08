@@ -3,6 +3,8 @@
 
 import os
 import glob
+import time
+
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -19,6 +21,9 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 # Variables of interest
 variables_dim_1 = ['p_0_x_position', 'p_1_x_position', 'p_2_x_position', 'p_3_x_position']
 variables_dim_2 = ['p_0_y_position', 'p_1_y_position', 'p_2_x_position', 'p_3_x_position']
+
+data_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'observations.csv')
+springs_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'springs.csv')
 
 
 def load_observations(path, _variables):
@@ -37,11 +42,11 @@ def load_observations(path, _variables):
 
 
 # Positions of particles
-observations_dim_1 = load_observations('data/observations.csv', variables_dim_1)
-observations_dim_2 = load_observations('data/observations.csv', variables_dim_2)
+observations_dim_1 = load_observations(data_observations_path, variables_dim_1)
+observations_dim_2 = load_observations(data_observations_path, variables_dim_2)
 
 # Spring constants between particles
-springs = load_observations('data/springs.csv', [])
+springs = load_observations(springs_observations_path, [])
 
 
 def setup_pcmci(data_frame):
@@ -58,9 +63,10 @@ def construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshol
     graph = nx.complete_graph(_vars)
     for p_a in range(len(_vars)):
         for p_b in range(len(_vars)):
-            avg_p_val = (p_values_dim_1[p_a][p_b][time_step] + p_values_dim_2[p_a][p_b][time_step])/2.0
-            if graph.has_edge(f'particle_{p_a}', f'particle_{p_b}') and (np.abs(avg_p_val) > p_threshold):
-                graph.remove_edge(f'particle_{p_a}', f'particle_{p_b}')
+            if p_a != p_b:
+                avg_p_val = (p_values_dim_1[p_a][p_b][time_step] + p_values_dim_2[p_a][p_b][time_step])/2.0
+                if graph.has_edge(f'particle_{p_a}', f'particle_{p_b}') and (np.abs(avg_p_val) > p_threshold):
+                    graph.remove_edge(f'particle_{p_a}', f'particle_{p_b}')
 
     # variables_dim_1 is ok
     save_graph(time_step, graph, variables_dim_1)
@@ -70,14 +76,12 @@ def save_graph(time_step, causal_graph, _variables):
     # observations -> positions
     # springs -> spring constants
     # causal graph from predictions
-
     fig, axes = plt.subplots(2, 2, figsize=(24, 16))
-
 
     # ----- Plotting Particle positions
     axes[0][0].set_title('Particle position')
     entries = []
-    _observations = pd.read_csv('data/observations.csv')
+    _observations = pd.read_csv(data_observations_path)
     for particle_id in range(0, len(variables_dim_1)):
         data = {'particle': particle_id,
                 'x_cordinate': _observations.iloc[time_step][f'p_{particle_id}_x_position'],
@@ -93,7 +97,7 @@ def save_graph(time_step, causal_graph, _variables):
     pl.set_xlim(-5.0, 5.0)
 
     # ----- Plotting spring constants
-    _springs = pd.read_csv('data/springs.csv')
+    _springs = pd.read_csv(springs_observations_path)
     axes[0][1].set_title(f'Spring connections')
     columns = [f'particle_{i}' for i in range(len(_variables))]
     s_mat = []
@@ -126,6 +130,7 @@ def save_graph(time_step, causal_graph, _variables):
             ax=axes[1][1],
             node_size=500)
 
+    """
     confusion_matrix = np.zeros(shape=(2, 2))
     for p_a in range(len(_vars)):
         for p_b in range(len(_vars)):
@@ -146,8 +151,9 @@ def save_graph(time_step, causal_graph, _variables):
 
     precision = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[0][1])
     recall = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[1][0])
+    """
 
-    fig.suptitle(f'Time step {time_step} - precision {precision}')
+    fig.suptitle(f'Time step {time_step}')
 
     #plt.show()
     fig.savefig(os.path.join(os.getcwd(), 'tmp', f'graph_{time_step}.png'))
@@ -183,35 +189,42 @@ def main():
     # Running pcmci on dim 1
 
     # *** Control Variables ***
-    tau_max = 100
-    p_threshold = 1.0
+    tau_max = 500
+    p_threshold = 0.05
 
-    _springs = pd.read_csv('data/springs.csv')
+    _springs = pd.read_csv(springs_observations_path)
+
+    start_time = time.time()
 
     print('Running pcmci on dim 1')
     parents = get_parents(tau_min=1, tau_max=tau_max)
     pcmci = setup_pcmci(observations_dim_1)
-    pcmci.verbosity = 1
+    pcmci.verbosity = 0
 
     results = pcmci.run_pcmci(tau_max=tau_max,
                               selected_links=parents)
     p_values_dim_1 = results['p_matrix'].round(3)
 
+    """
     # Running pcmci on dim 2
     print('Running pcmci on dim 2')
     pcmci = setup_pcmci(observations_dim_2)
-    pcmci.verbosity = 1
+    pcmci.verbosity = 0
 
     results = pcmci.run_pcmci(tau_max=tau_max,
                               selected_links=parents)
     p_values_dim_2 = results['p_matrix'].round(3)
+    """
 
     time_step = tau_max-1
     while time_step != 0:
-        construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
+        construct_causal_graph(time_step, p_values_dim_1, p_values_dim_1, p_threshold)
         time_step -= 1
 
+    end_time = time.time()
+
     print('Done.')
+    print(f'Total time taken {end_time - start_time}')
 
 # delete all png files.
 fp_in = f"{os.getcwd()}/tmp/timestep_*.png"

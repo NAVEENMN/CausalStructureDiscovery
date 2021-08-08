@@ -8,12 +8,17 @@ writes observational data and schema to /data
 import os
 import time
 import logging
+import argparse
 import pandas as pd
 import numpy as np
 from particle_system import SpringSystem
 from multiprocessing import Pool
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
+parser = argparse.ArgumentParser(description='Control variables for simulations.')
+parser.add_argument('--tl', default=5000, help='Trajectory length of individual simulation.', type=int)
+parser.add_argument('--sf', default=50, help='Sample frequency for individual simulation', type=int)
+parser.add_argument('--ns', default=1, help='Total number of simulations.', type=int)
 
 
 class Observations(object):
@@ -38,18 +43,19 @@ class Observations(object):
         df = pd.DataFrame(self.observations).set_index('trajectory_step')
         # index represents most reset observation
         df = df[::-1]
-        _dir = os.path.split(os.getcwd())[0]
-        df.to_csv(os.path.join('/home/ubuntu/CausalStructureDiscovery/data/simulations', f'{name}.csv'))
+        df.to_csv(os.path.join(os.getcwd(), 'data', f'{name}.csv'))
         logging.info(f"*** Saved: observations {name}.csv")
 
 
 def run_spring_particle_simulation(_id=0):
+    args = parser.parse_args()
     # *** Control Variables ***
     num_of_particles = 4
-    trajectory_length = 100000
-    sample_freq = 50
+    trajectory_length = args.tl
+    sample_freq = args.sf
     # Zero implies static edges
     period = 0
+    initial_velocity = 0.5
     # ********
 
     # Create Observation records
@@ -77,7 +83,7 @@ def run_spring_particle_simulation(_id=0):
     # Configure the particle system
     sp = SpringSystem()
     sp.add_particles(num_of_particles)
-    sp.set_initial_velocity_mean_sd((0.0, 0.0001))
+    sp.set_initial_velocity_mean_sd((initial_velocity, 0.5))
     logging.info(f'*** Running: Simulation {_id}')
 
     # *** Control Variable ***
@@ -104,7 +110,8 @@ def run_spring_particle_simulation(_id=0):
 
 def main():
     start = time.time()
-    number_of_simulations = range(100)
+    args = parser.parse_args()
+    number_of_simulations = range(args.ns)
     with Pool(4) as p:
         p.map(run_spring_particle_simulation, number_of_simulations)
     print(f'Total time taken: {time.time() - start}')

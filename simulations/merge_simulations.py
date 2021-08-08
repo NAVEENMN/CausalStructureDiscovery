@@ -9,7 +9,7 @@ import pandas as pd
 
 observations = None
 flag = False
-for name in glob.glob('../data/simulations/observations_*.csv'):
+for name in glob.glob(os.path.join(os.getcwd(), 'data', 'observations_*.csv')):
     print(f'*** Reading {name}')
     if not flag:
         observations = pd.read_csv(name)
@@ -21,12 +21,12 @@ for name in glob.glob('../data/simulations/observations_*.csv'):
 print(f"*** Saving: observations {observations.shape}")
 df = pd.DataFrame(observations).set_index('trajectory_step')
 _dir = os.path.split(os.getcwd())[0]
-df.to_csv(os.path.join(_dir, 'data', f'observations.csv'))
+df.to_csv(os.path.join(os.getcwd(), 'data', 'observations.csv'))
 print(f"*** Saved: data/observations.csv")
 
 springs = None
 flag = False
-for name in glob.glob('../data/simulations/springs_*.csv'):
+for name in glob.glob(os.path.join(os.getcwd(), 'data', 'springs_*.csv')):
     print(f'*** Reading {name}')
     if not flag:
         springs = pd.read_csv(name)
@@ -38,5 +38,5 @@ for name in glob.glob('../data/simulations/springs_*.csv'):
 print(f"*** Saving: springs {springs.shape}")
 df = pd.DataFrame(springs).set_index('trajectory_step')
 _dir = os.path.split(os.getcwd())[0]
-df.to_csv(os.path.join(_dir, 'data', f'springs.csv'))
+df.to_csv(os.path.join(os.getcwd(), 'data', 'springs.csv'))
 print(f"*** Saved: data/springs.csv")

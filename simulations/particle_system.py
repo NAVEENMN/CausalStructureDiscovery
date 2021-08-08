@@ -143,10 +143,9 @@ class SpringSystem(Environment):
             vel_norm = 0.5
             _position = np.random.randn(2, num_particles) * loc_std
             # sample initial velocity from normal distribution
-            _mv = np.random.normal(self.init_velocity_mean_sd[0],
-                                   self.init_velocity_mean_sd[1], 1)
+            _mv = np.random.normal(self.init_velocity_mean_sd[0], 0.01, 1)
             logging.info(f'Initial velocity set to {_mv}')
-            _velocity = (_mv + np.random.randn(2, num_particles)) * 0.01
+            _velocity = (_mv + np.random.randn(2, num_particles)) * self.init_velocity_mean_sd[1]
             # Compute magnitude of this velocity vector and format to right shape
             #v_norm = np.linalg.norm(_position, axis=0)
             # Scale by magnitude
@@ -264,7 +263,7 @@ class SpringSystem(Environment):
                 self.add_observation(observations, spring_observations, traj_id, step, self.k, current_position, velocity)
                 step += 1
 
-            if period != 0 and i % period == 0:
+            if (period != 0) and (i % period == 0):
                 if flip_flag:
                     logging.info(f'*** Simulation: Step {i} Flipping edges (Removing)')
                     self.remove_all_springs()
@@ -273,9 +272,6 @@ class SpringSystem(Environment):
                     logging.info(f'*** Simulation: Step {i} Flipping edges (Restoring)')
                     self.add_springs(spring_constants_matrix=original_springs)
                     flip_flag = True
-
-
-
 
     def add_observation(self, observations, spring_observations, traj_id, step, springs, positions, velocity):
         # local dict to collect readings
