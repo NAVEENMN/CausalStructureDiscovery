@@ -14,6 +14,7 @@ from tigramite import plotting as tp
 from tigramite.independence_tests import ParCorr
 from tigramite.pcmci import PCMCI
 import seaborn as sns
+import sklearn.metrics
 from multiprocessing import Pool
 
 import logging
@@ -75,7 +76,8 @@ def construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshol
                     graph.remove_edge(f'particle_{p_a}', f'particle_{p_b}')
 
     # variables_dim_1 is ok
-    save_graph(time_step, graph, variables_dim_1)
+    area_under_curve = save_graph(time_step, graph, variables_dim_1)
+    return area_under_curve
 
 
 def save_graph(time_step, causal_graph, _variables):
@@ -136,37 +138,42 @@ def save_graph(time_step, causal_graph, _variables):
             ax=axes[1][1],
             node_size=500)
 
-    """
-    confusion_matrix = np.zeros(shape=(2, 2))
+    true_labels = []
+    pred_labels = []
+
     for p_a in range(len(_vars)):
         for p_b in range(len(_vars)):
             if np.abs(_springs.iloc[time_step][f's_{p_a}_{p_b}']) == 0.0:
+                true_labels.append(0)
                 if causal_graph.has_edge(f'particle_{p_a}', f'particle_{p_b}'):
                     # false positive
-                    confusion_matrix[0][1] += 1
+                    pred_labels.append(1)
                 else:
                     # True negative
-                    confusion_matrix[1][1] += 1
+                    pred_labels.append(0)
             else:
+                true_labels.append(1)
                 if causal_graph.has_edge(f'particle_{p_a}', f'particle_{p_b}'):
                     # True positive
-                    confusion_matrix[0][0] += 1
+                    pred_labels.append(1)
                 else:
                     # False negative
-                    confusion_matrix[1][0] += 1
+                    pred_labels.append(0)
+    #positive class is 1; negative class is 0
+    fpr, tpr, thresholds = sklearn.metrics.roc_curve(y_true=true_labels, y_score=pred_labels, pos_label=1)
+    auroc = sklearn.metrics.auc(fpr, tpr)
 
-    precision = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[0][1])
-    recall = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[1][0])
-    """
     args = parser.parse_args()
 
-    details = f'p_threshold: {args.pv}, tau: {args.tau}'
+    details = f'p_threshold: {args.pv}, tau: {args.tau}, fpr: {round(np.mean(fpr), 2)}, tpr: {round(np.mean(tpr), 2)}, auroc:{round(auroc, 2)}'
     fig.suptitle(f'Time step {time_step} - {details}')
 
     #plt.show()
     fig.savefig(os.path.join(os.getcwd(), 'tmp', f'graph_{time_step}.png'))
     plt.clf()
     plt.close(fig)
+
+    return auroc
 
 
 def get_parents(tau_max, tau_min):
@@ -215,6 +222,12 @@ def main():
 
     _springs = pd.read_csv(springs_observations_path)
 
+    # Clean
+    if os.path.exists('data/p_values_dim_1.npy'):
+        os.remove('data/p_values_dim_1.npy')
+    if os.path.exists('data/p_values_dim_2.npy'):
+        os.remove('data/p_values_dim_2.npy')
+
     start_time = time.time()
     dims = [1, 2]
     with Pool(4) as p:
@@ -226,14 +239,18 @@ def main():
     with open('data/p_values_dim_2.npy', 'rb') as f2:
         p_values_dim_2 = np.load(f2)
 
+    logging.info('Constructing causal graph')
     time_step = tau_max-1
+    aurocs = []
     while time_step != 0:
-        construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
+        auroc = construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
+        aurocs.append(auroc)
         time_step -= 1
 
     end_time = time.time()
 
     print('Done.')
+    print(f'Average AUROC {np.mean(aurocs)}')
     print(f'Total time taken {end_time - start_time}')
 
 # delete all png files.

@@ -11,11 +11,13 @@ import logging
 import argparse
 import pandas as pd
 import numpy as np
+import json
 from particle_system import SpringSystem
 from multiprocessing import Pool
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 parser = argparse.ArgumentParser(description='Control variables for simulations.')
+parser.add_argument('--np', default=4, help='Number of particles.', type=int)
 parser.add_argument('--tl', default=5000, help='Trajectory length of individual simulation.', type=int)
 parser.add_argument('--sf', default=50, help='Sample frequency for individual simulation', type=int)
 parser.add_argument('--ns', default=1, help='Total number of simulations.', type=int)
@@ -27,8 +29,8 @@ def get_experiment_id():
     import pytz
     timezone = pytz.timezone("America/Los_Angeles")
     dt = timezone.localize(datetime.datetime.now())
-    _time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}'
-    _day = f'{dt.date().month}/{dt.date().day}/{dt.date().year}'
+    _time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}:{dt.time().microsecond}'
+    _day = f'{dt.date().month}:{dt.date().day}:{dt.date().year}'
     name = f'exp_{_day}-{_time}'
     return name
 
@@ -128,6 +130,15 @@ def main():
     number_of_simulations = range(args.ns)
     with Pool(4) as p:
         p.map(run_spring_particle_simulation, number_of_simulations)
+
+    # Write simulation details
+    sdata = {'trajectory_length': args.tl,
+             'number_of_simulations': args.ns,
+             'num_of_particles': args.np,
+             'data_size': args.tl * args.ns}
+    with open(f'data/simulation_details_{get_experiment_id()}.json', 'w') as f:
+        json.dump(sdata, f)
+
     print(f'Total time taken: {time.time() - start}')
 
 
