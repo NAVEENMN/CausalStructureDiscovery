@@ -4,7 +4,7 @@
 import os
 import glob
 import time
-
+import argparse
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -17,6 +17,11 @@ import seaborn as sns
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+parser = argparse.ArgumentParser(description='Control variables for PC Algorithm.')
+parser.add_argument('--pv', default=0.02, help='Threshold p value', type=float)
+parser.add_argument('--tau', default=100, help='Max Tau', type=int)
+
 
 # Variables of interest
 variables_dim_1 = ['p_0_x_position', 'p_1_x_position', 'p_2_x_position', 'p_3_x_position']
@@ -152,8 +157,10 @@ def save_graph(time_step, causal_graph, _variables):
     precision = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[0][1])
     recall = confusion_matrix[0][0] / (confusion_matrix[0][0] + confusion_matrix[1][0])
     """
+    args = parser.parse_args()
 
-    fig.suptitle(f'Time step {time_step}')
+    details = f'p_threshold: {args.pv}, tau: {args.tau}'
+    fig.suptitle(f'Time step {time_step}\n{details}')
 
     #plt.show()
     fig.savefig(os.path.join(os.getcwd(), 'tmp', f'graph_{time_step}.png'))
@@ -189,8 +196,9 @@ def main():
     # Running pcmci on dim 1
 
     # *** Control Variables ***
-    tau_max = 500
-    p_threshold = 0.02
+    args = parser.parse_args()
+    tau_max = args.tau
+    p_threshold = args.pv
 
     _springs = pd.read_csv(springs_observations_path)
 
