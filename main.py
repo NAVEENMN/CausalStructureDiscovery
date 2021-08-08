@@ -190,7 +190,7 @@ def main():
 
     # *** Control Variables ***
     tau_max = 500
-    p_threshold = 0.05
+    p_threshold = 0.02
 
     _springs = pd.read_csv(springs_observations_path)
 

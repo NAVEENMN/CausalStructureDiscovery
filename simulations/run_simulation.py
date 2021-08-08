@@ -19,6 +19,18 @@ parser = argparse.ArgumentParser(description='Control variables for simulations.
 parser.add_argument('--tl', default=5000, help='Trajectory length of individual simulation.', type=int)
 parser.add_argument('--sf', default=50, help='Sample frequency for individual simulation', type=int)
 parser.add_argument('--ns', default=1, help='Total number of simulations.', type=int)
+parser.add_argument('--vel', default=0.0, help='Initial mean velocity of particles.', type=float)
+
+
+def get_experiment_id():
+    import datetime
+    import pytz
+    timezone = pytz.timezone("America/Los_Angeles")
+    dt = timezone.localize(datetime.datetime.now())
+    _time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}'
+    _day = f'{dt.date().month}/{dt.date().day}/{dt.date().year}'
+    name = f'exp_{_day}-{_time}'
+    return name
 
 
 class Observations(object):
@@ -55,12 +67,14 @@ def run_spring_particle_simulation(_id=0):
     sample_freq = args.sf
     # Zero implies static edges
     period = 0
-    initial_velocity = 0.5
+    initial_velocity = args.vel
     # ********
 
     # Create Observation records
     particle_observations = Observations()
     spring_observations = Observations()
+
+    logging.info(f'*** Simulation: Each simulation will have {trajectory_length/sample_freq} snapshots.')
 
     # Configure the observations for recording
     column_names = ['trajectory_step']

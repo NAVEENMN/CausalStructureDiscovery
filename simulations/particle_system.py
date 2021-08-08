@@ -125,7 +125,6 @@ class SpringSystem(Environment):
                     self.p_graph.remove_spring_from_graph(node_a=particle_a,
                                                           node_b=particle_b)
 
-
     def simulate(self, total_time_steps, period, sample_freq, observations, spring_observations, traj_id):
         num_particles = self.p_graph.get_total_number_of_particles()
         if num_particles == 0:
