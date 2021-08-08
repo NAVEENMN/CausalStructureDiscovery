@@ -14,6 +14,7 @@ from tigramite import plotting as tp
 from tigramite.independence_tests import ParCorr
 from tigramite.pcmci import PCMCI
 import seaborn as sns
+from multiprocessing import Pool
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
@@ -188,6 +189,18 @@ def get_parents(tau_max, tau_min):
 
     return _int_sel_links
 
+def run_pc(dim):
+    args = parser.parse_args()
+    print(f'Running pcmci on dim {dim}')
+    parents = get_parents(tau_min=1, tau_max=args.tau)
+    pcmci = setup_pcmci(observations_dim_1)
+    pcmci.verbosity = 0
+    results = pcmci.run_pcmci(tau_max=args.tau,
+                              selected_links=parents)
+    p_values = results['p_matrix'].round(3)
+    logging.info(f'Saving pcmci {dim}')
+    np.save(os.path.join(os.getcwd(), 'data', f'p_values_dim_{dim}'), p_values)
+    logging.info(f'Saved pcmci {dim}')
 
 def main():
     # First they estimate all parents for last layer.
@@ -203,30 +216,19 @@ def main():
     _springs = pd.read_csv(springs_observations_path)
 
     start_time = time.time()
+    dims = [1, 2]
+    with Pool(4) as p:
+        p.map(run_pc, dims)
 
-    print('Running pcmci on dim 1')
-    parents = get_parents(tau_min=1, tau_max=tau_max)
-    pcmci = setup_pcmci(observations_dim_1)
-    pcmci.verbosity = 0
+    with open('data/p_values_dim_1.npy', 'rb') as f1:
+        p_values_dim_1 = np.load(f1)
 
-    results = pcmci.run_pcmci(tau_max=tau_max,
-                              selected_links=parents)
-    p_values_dim_1 = results['p_matrix'].round(3)
-
-    """
-    # Running pcmci on dim 2
-    print('Running pcmci on dim 2')
-    pcmci = setup_pcmci(observations_dim_2)
-    pcmci.verbosity = 0
-
-    results = pcmci.run_pcmci(tau_max=tau_max,
-                              selected_links=parents)
-    p_values_dim_2 = results['p_matrix'].round(3)
-    """
+    with open('data/p_values_dim_2.npy', 'rb') as f2:
+        p_values_dim_2 = np.load(f2)
 
     time_step = tau_max-1
     while time_step != 0:
-        construct_causal_graph(time_step, p_values_dim_1, p_values_dim_1, p_threshold)
+        construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
         time_step -= 1
 
     end_time = time.time()

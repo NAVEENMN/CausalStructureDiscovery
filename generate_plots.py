@@ -4,8 +4,8 @@ def get_experiment_id():
     timezone = pytz.timezone("America/Los_Angeles")
     dt = timezone.localize(datetime.datetime.now())
     _time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}'
-    _day = f'{dt.date().month}/{dt.date().day}/{dt.date().year}'
-    name = f'exp_{_day}-{_time}'
+    _day = f'{dt.date().month}-{dt.date().day}-{dt.date().year}'
+    name = f'exp_{_day}_{_time}'
     return name
 
 
@@ -32,3 +32,4 @@ def create_gif():
 
 
 create_gif()
+print('Done.')
