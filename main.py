@@ -4,6 +4,7 @@
 import os
 import glob
 import time
+import json
 import argparse
 import numpy as np
 import pandas as pd
@@ -32,6 +33,15 @@ variables_dim_2 = ['p_0_y_position', 'p_1_y_position', 'p_2_x_position', 'p_3_x_
 data_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'observations.csv')
 springs_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'springs.csv')
 
+def get_experiment_id():
+    import datetime
+    import pytz
+    timezone = pytz.timezone("America/Los_Angeles")
+    dt = timezone.localize(datetime.datetime.now())
+    _time = f'{dt.time().hour}:{dt.time().minute}:{dt.time().second}:{dt.time().microsecond}'
+    _day = f'{dt.date().month}:{dt.date().day}:{dt.date().year}'
+    name = f'exp_{_day}-{_time}'
+    return name
 
 def load_observations(path, _variables):
     data = pd.read_csv(path)
@@ -251,6 +261,17 @@ def main():
 
     print('Done.')
     print(f'Average AUROC {np.mean(aurocs)}')
+
+    # Publish results
+    # Read simulation settings
+    json_files = glob.glob('simulations/data/*.json')
+    with open(json_files[0]) as json_file:
+        results = json.load(json_file)
+    results['tau'] = tau_max
+    results['p_threshold'] = p_threshold
+    results['auroc'] = np.mean(aurocs)
+    with open(f'result/simulation_details_{get_experiment_id()}.json', 'w') as f:
+        json.dump(results, f)
     print(f'Total time taken {end_time - start_time}')
 
 # delete all png files.
