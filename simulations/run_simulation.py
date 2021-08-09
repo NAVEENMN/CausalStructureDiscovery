@@ -132,11 +132,14 @@ def main():
     with Pool(4) as p:
         p.map(run_spring_particle_simulation, number_of_simulations)
 
+    _data = pd.read_csv('data/observations.csv')
+
     # Write simulation details
     sdata = {'trajectory_length': args.tl,
              'number_of_simulations': args.ns,
+             'sample_frequency': args.sf,
              'num_of_particles': args.np,
-             'data_size': int((args.tl/args.sf) * args.ns)}
+             'data_size': _data.shape[0]}
     with open(f'data/simulation_details_{get_experiment_id()}.json', 'w') as f:
         json.dump(sdata, f)
 
