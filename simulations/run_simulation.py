@@ -136,7 +136,7 @@ def main():
     sdata = {'trajectory_length': args.tl,
              'number_of_simulations': args.ns,
              'num_of_particles': args.np,
-             'data_size': (args.tl/args.sf) * args.ns}
+             'data_size': int((args.tl/args.sf) * args.ns)}
     with open(f'data/simulation_details_{get_experiment_id()}.json', 'w') as f:
         json.dump(sdata, f)
 
