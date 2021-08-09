@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 results_files = glob.glob('/Users/naveenmysore/Documents/plots/csdi/recent/*.json')
 auroc_results = dict()
-columns = ['trajectory_length', 'number_of_simulations', 'num_of_particles', 'data_size', 'tau', 'p_threshold', 'auroc']
+columns = ['trajectory_length', 'number_of_simulations', 'sample_frequency', 'num_of_particles', 'data_size', 'tau', 'p_threshold', 'auroc']
 auroc_results = {label: [] for label in columns}
 for json_file in results_files:
     with open(json_file) as jfile:

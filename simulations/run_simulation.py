@@ -128,7 +128,7 @@ def run_spring_particle_simulation(_id=0):
 def main():
     start = time.time()
     args = parser.parse_args()
-    number_of_simulations = range(args.ns)
+    number_of_simulations = list(range(args.ns))
     with Pool(4) as p:
         p.map(run_spring_particle_simulation, number_of_simulations)
 
