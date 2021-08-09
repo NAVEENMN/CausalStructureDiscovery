@@ -22,6 +22,7 @@ parser.add_argument('--tl', default=5000, help='Trajectory length of individual 
 parser.add_argument('--sf', default=50, help='Sample frequency for individual simulation', type=int)
 parser.add_argument('--ns', default=1, help='Total number of simulations.', type=int)
 parser.add_argument('--vel', default=0.0, help='Initial mean velocity of particles.', type=float)
+parser.add_argument('--per', default=0, help='Spring period.', type=int)
 
 
 def get_experiment_id():
@@ -68,7 +69,7 @@ def run_spring_particle_simulation(_id=0):
     trajectory_length = args.tl
     sample_freq = args.sf
     # Zero implies static edges
-    period = 0
+    period = args.per
     initial_velocity = args.vel
     # ********
 
@@ -135,7 +136,7 @@ def main():
     sdata = {'trajectory_length': args.tl,
              'number_of_simulations': args.ns,
              'num_of_particles': args.np,
-             'data_size': args.tl * args.ns}
+             'data_size': (args.tl/args.sf) * args.ns}
     with open(f'data/simulation_details_{get_experiment_id()}.json', 'w') as f:
         json.dump(sdata, f)
 
