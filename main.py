@@ -264,11 +264,6 @@ def main():
             for p_b in range(len(_vars)):
                 if (p_a != p_b) and (graph.has_edge(f'particle_{p_a}', f'particle_{p_b}')):
                     links_distribution['links'].append(f'{p_a}-{p_b}')
-        df = pd.DataFrame(links_distribution)
-        _title = f'LinkDistribution - {exp_id} - tau:{tau_max} - p_threshold: {p_threshold}'
-        dist_plt = sns.histplot(df, x='links').set_title(_title)
-        dist_plt = dist_plt.get_figure()
-        dist_plt.savefig(f'result/links_dist_{exp_id}.png')
         time_step -= 1
 
     end_time = time.time()
@@ -286,6 +281,13 @@ def main():
     results['auroc'] = np.mean(aurocs)
     with open(f'result/simulation_details_{exp_id}.json', 'w') as f:
         json.dump(results, f)
+
+    df = pd.DataFrame(links_distribution)
+    _title = f'LinkDistribution - {exp_id} - tau:{tau_max} - p_threshold: {p_threshold}'
+    dist_plt = sns.histplot(df, x='links').set_title(_title)
+    dist_plt = dist_plt.get_figure()
+    dist_plt.savefig(f'result/links_dist_{exp_id}.png')
+
     print(f'Total time taken {end_time - start_time}')
 
 # delete all png files.
