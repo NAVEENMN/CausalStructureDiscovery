@@ -208,11 +208,12 @@ def get_parents(tau_max, tau_min):
 
 def run_pc(dim):
     args = parser.parse_args()
-    print(f'Running pcmci on dim {dim}')
     parents = get_parents(tau_min=1, tau_max=args.tau)
     if dim == 1:
+        logging.info(f'Running PCMCI on dim {dim}')
         pcmci = setup_pcmci(observations_dim_1)
     else:
+        logging.info(f'Running PCMCI on dim {dim}')
         pcmci = setup_pcmci(observations_dim_2)
 
     pcmci.verbosity = 0
