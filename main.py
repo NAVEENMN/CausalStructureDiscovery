@@ -210,7 +210,11 @@ def run_pc(dim):
     args = parser.parse_args()
     print(f'Running pcmci on dim {dim}')
     parents = get_parents(tau_min=1, tau_max=args.tau)
-    pcmci = setup_pcmci(observations_dim_1)
+    if dim == 1:
+        pcmci = setup_pcmci(observations_dim_1)
+    else:
+        pcmci = setup_pcmci(observations_dim_2)
+
     pcmci.verbosity = 0
     results = pcmci.run_pcmci(tau_max=args.tau,
                               selected_links=parents)
