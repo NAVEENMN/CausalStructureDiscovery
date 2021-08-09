@@ -23,7 +23,8 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Control variables for PC Algorithm.')
 parser.add_argument('--pv', default=0.02, help='Threshold p value', type=float)
-parser.add_argument('--tau', default=100, help='Max Tau', type=int)
+parser.add_argument('--taumin', default=1, help='Min Tau', type=int)
+parser.add_argument('--taumax', default=100, help='Max Tau', type=int)
 
 
 # Variables of interest CAREFUL!!
@@ -175,7 +176,7 @@ def save_graph(time_step, causal_graph, _variables):
 
     args = parser.parse_args()
 
-    details = f'p_threshold: {args.pv}, tau: {args.tau}, fpr: {round(np.mean(fpr), 2)}, tpr: {round(np.mean(tpr), 2)}, auroc:{round(auroc, 2)}'
+    details = f'p_threshold: {args.pv}, taumin: {args.taumin},, taumax: {args.taumax}, fpr: {round(np.mean(fpr), 2)}, tpr: {round(np.mean(tpr), 2)}, auroc:{round(auroc, 2)}'
     fig.suptitle(f'Time step {time_step} - {details}')
 
     #plt.show()
@@ -208,7 +209,7 @@ def get_parents(tau_max, tau_min):
 
 def run_pc(dim):
     args = parser.parse_args()
-    parents = get_parents(tau_min=1, tau_max=args.tau)
+    parents = get_parents(tau_min=args.taumin, tau_max=args.taumax)
     if dim == 1:
         logging.info(f'Running PCMCI on dim {dim}')
         pcmci = setup_pcmci(observations_dim_1)
@@ -217,7 +218,8 @@ def run_pc(dim):
         pcmci = setup_pcmci(observations_dim_2)
 
     pcmci.verbosity = 0
-    results = pcmci.run_pcmci(tau_max=args.tau,
+    results = pcmci.run_pcmci(tau_max=args.taumax,
+                              tau_min=args.taumin,
                               selected_links=parents)
     p_values = results['p_matrix'].round(3)
     logging.info(f'Saving pcmci {dim}')
@@ -234,7 +236,7 @@ def main():
 
     # *** Control Variables ***
     args = parser.parse_args()
-    tau_max = args.tau
+    tau_max = args.taumax
     p_threshold = args.pv
 
     _springs = pd.read_csv(springs_observations_path)
