@@ -135,13 +135,10 @@ class ParticleGraph(Graph):
         # Spring is a fork in causal graph terminology
         # X(particle) <- Y(Spring) -> Z(particle)
         x = particle_a
-        z = particle_b
-        y = f's{self.get_total_nodes()}'
+        y = particle_b
         logging.debug(f'*** ParticleGraph: Adding a spring {particle_a}-{particle_b}:{spring_constant}')
-        self.add_node_to_graph(y)
         self.spring_count += 1
-        self.add_an_edge_to_graph(y, x, weight=spring_constant)
-        self.add_an_edge_to_graph(y, z, weight=spring_constant)
+        self.add_an_edge_to_graph(x, y, weight=spring_constant)
 
     def remove_spring_from_graph(self, node_a, node_b):
         if self.remove_an_edge_from_graph(node_a=node_a, node_b=node_b):

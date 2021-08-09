@@ -65,7 +65,7 @@ class Observations(object):
 def run_spring_particle_simulation(_id=0):
     args = parser.parse_args()
     # *** Control Variables ***
-    num_of_particles = 4
+    num_of_particles = args.np
     trajectory_length = args.tl
     sample_freq = args.sf
     # Zero implies static edges
@@ -126,14 +126,16 @@ def run_spring_particle_simulation(_id=0):
 
 
 def main():
+    args = parser.parse_args()
+    logging.info(f'Running {args.ns} simulations with {args.np} particles of trajectory length {args.tl} with sample frequency {args.sf}')
     start = time.time()
     args = parser.parse_args()
     number_of_simulations = list(range(args.ns))
-    with Pool(4) as p:
-        p.map(run_spring_particle_simulation, number_of_simulations)
+    run_spring_particle_simulation(_id=0)
+    #with Pool(4) as p:
+    #    p.map(run_spring_particle_simulation, number_of_simulations)
 
     _data = pd.read_csv('data/observations.csv')
-
     # Write simulation details
     sdata = {'trajectory_length': args.tl,
              'number_of_simulations': args.ns,
