@@ -87,7 +87,7 @@ def construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshol
 
     # variables_dim_1 is ok
     area_under_curve = save_graph(time_step, graph, variables_dim_1)
-    return area_under_curve
+    return area_under_curve, graph
 
 
 def save_graph(time_step, causal_graph, _variables):
@@ -225,6 +225,8 @@ def main():
     # The same set of parents are used for momemtary ci test backwards in time.
     # Running pcmci on dim 1
 
+    exp_id = get_experiment_id()
+
     # *** Control Variables ***
     args = parser.parse_args()
     tau_max = args.tau
@@ -250,11 +252,23 @@ def main():
         p_values_dim_2 = np.load(f2)
 
     logging.info('Constructing causal graph')
+    links_distribution = dict()
+    links_distribution['links'] = []
+    _vars = [f'particle_{i}' for i in range(len(variables_dim_1))]
     time_step = tau_max-1
     aurocs = []
     while time_step != 0:
-        auroc = construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
+        auroc, graph = construct_causal_graph(time_step, p_values_dim_1, p_values_dim_2, p_threshold)
         aurocs.append(auroc)
+        for p_a in range(len(_vars)):
+            for p_b in range(len(_vars)):
+                if (p_a != p_b) and (graph.has_edge(f'particle_{p_a}', f'particle_{p_b}')):
+                    links_distribution['links'].append(f'{p_a}-{p_b}')
+        df = pd.DataFrame(links_distribution)
+        _title = f'LinkDistribution - {exp_id} - tau:{tau_max} - p_threshold: {p_threshold}'
+        dist_plt = sns.histplot(df, x='links').set_title(_title)
+        dist_plt = dist_plt.get_figure()
+        dist_plt.savefig(f'result/links_dist_{exp_id}.png')
         time_step -= 1
 
     end_time = time.time()
@@ -270,7 +284,7 @@ def main():
     results['tau'] = tau_max
     results['p_threshold'] = p_threshold
     results['auroc'] = np.mean(aurocs)
-    with open(f'result/simulation_details_{get_experiment_id()}.json', 'w') as f:
+    with open(f'result/simulation_details_{exp_id}.json', 'w') as f:
         json.dump(results, f)
     print(f'Total time taken {end_time - start_time}')
 
