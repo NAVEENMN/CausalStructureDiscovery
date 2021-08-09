@@ -2,6 +2,7 @@ import glob
 import json
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 results_files = glob.glob('/Users/naveenmysore/Documents/plots/csdi/recent/*.json')
 auroc_results = dict()
@@ -15,3 +16,6 @@ for json_file in results_files:
         print(jresults)
 df = pd.DataFrame(auroc_results)
 print(df.head())
+sns.lineplot(df.data_size, df.auroc)
+plt.xscale('log')
+plt.show()
