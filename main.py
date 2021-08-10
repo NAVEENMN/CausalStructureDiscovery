@@ -23,8 +23,8 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Control variables for PC Algorithm.')
 parser.add_argument('--pv', default=0.02, help='Threshold p value', type=float)
-parser.add_argument('--taumin', default=1, help='Min Tau', type=int)
-parser.add_argument('--taumax', default=100, help='Max Tau', type=int)
+parser.add_argument('--taumin', default=2, help='Min Tau', type=int)
+parser.add_argument('--taumax', default=10, help='Max Tau', type=int)
 
 
 # Variables of interest CAREFUL!!
@@ -49,6 +49,7 @@ def load_observations(path, _variables):
     # reversing the data so that the least valued
     # 0 index represents most reset observation
     # collect variables of interest
+    data = data[::-1]
     if _variables:
         data = data[_variables]
     print(data.head())

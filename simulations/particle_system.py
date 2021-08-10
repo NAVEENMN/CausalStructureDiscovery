@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 class Environment(object):
     def __init__(self):
         self.box_size = 5.0
-        self._delta_T = 0.001
+        self._delta_T = 0.01
         self.dimensions = 2
         self._positions = []
         self._velocities = []
@@ -138,8 +138,9 @@ class SpringSystem(Environment):
             initial position and velocity for all particles.
             :return: initial position and velocity
             """
-            loc_std = 0.5
             vel_norm = 0.5
+            loc_std = 0.5
+            # start at origin
             _position = np.random.randn(2, num_particles) * loc_std
             # sample initial velocity from normal distribution
             _mv = np.random.normal(self.init_velocity_mean_sd[0], 0.01, 1)
@@ -173,57 +174,11 @@ class SpringSystem(Environment):
             _force = (force_matrix * np.concatenate((x_diffs, y_diffs))).sum(axis=-1)
             return _force
 
-        def get_force(k, current_positions):
-            """
-            :param k: Adjacency matrix representing mutual causality
-            :param current_positions: current coordinates of all particles
-            :return: net forces acting on all particles.
-            TODO: Re verify this force computation
-            """
-            np.fill_diagonal(k, 0)
-            x_cords, y_cords = current_positions[0, :], current_positions[1, :]
-
-            # we are interested in distance between particles not direction
-            x_diffs = np.subtract.outer(x_cords, x_cords)
-            y_diffs = np.subtract.outer(y_cords, y_cords)
-            distance_matrix = np.sqrt(np.square(x_diffs) + np.square(y_diffs))
-
-            # By Hooke's law Force = -k * dx
-            force = np.multiply(-k, distance_matrix)
-            force_direction = np.full(force.shape, -2)
-            force_direction = np.tril(force_direction, k=0)
-            np.fill_diagonal(force_direction, 0)
-            force_direction = np.add(force_direction, np.ones(force.shape))
-            force = np.multiply(force, force_direction)
-
-            # get force components
-            poc_vec = current_positions / np.linalg.norm(current_positions, axis=0)
-            x_intep, y_intep = poc_vec[0], poc_vec[1]
-
-            # slope = (y2-y1)/(x2-x1)
-            # tan(theta) = slope
-            dif_y = np.subtract.outer(y_intep, y_intep)
-            dif_x = np.subtract.outer(x_intep, x_intep)
-            slopes = np.divide(dif_y, dif_x)
-            slopes = np.nan_to_num(slopes)
-            theta = np.arctan(slopes)
-
-            horizontal_components = np.multiply(force, np.cos(theta))
-            vertical_components = np.multiply(force, np.sin(theta))
-
-            # net forces acting on each particle along x dimension
-            nfx = np.reshape(horizontal_components.sum(axis=0), (1, self.num_particles))
-            # net forces acting on each particle along y dimension
-            nfy = np.reshape(vertical_components.sum(axis=0), (1, self.num_particles))
-            # package the results as (2 * num of particles)
-            _force = np.concatenate((nfx, nfy), axis=0)
-            return _force
-
         # Initialize the first position and velocity from a distribution
         init_position, init_velocity = get_init_pos_velocity()
 
         # Compute initial forces between particles.
-        init_force_between_particles = get_force(self.k, init_position)
+        init_force_between_particles = get_force1(self.k, init_position)
 
         # Compute new velocity.
         '''

@@ -57,7 +57,6 @@ class Observations(object):
         logging.info("*** Saving: observations")
         df = pd.DataFrame(self.observations).set_index('trajectory_step')
         # index represents most reset observation
-        df = df[::-1]
         df.to_csv(os.path.join(os.getcwd(), 'data', f'{name}.csv'))
         logging.info(f"*** Saved: observations {name}.csv")
 
@@ -131,17 +130,16 @@ def main():
     start = time.time()
     args = parser.parse_args()
     number_of_simulations = list(range(args.ns))
-    run_spring_particle_simulation(_id=0)
-    #with Pool(4) as p:
-    #    p.map(run_spring_particle_simulation, number_of_simulations)
+    #run_spring_particle_simulation(_id=0)
+    with Pool(4) as p:
+        p.map(run_spring_particle_simulation, number_of_simulations)
 
-    _data = pd.read_csv('data/observations.csv')
     # Write simulation details
     sdata = {'trajectory_length': args.tl,
              'number_of_simulations': args.ns,
              'sample_frequency': args.sf,
              'num_of_particles': args.np,
-             'data_size': _data.shape[0]}
+             'data_size': int((args.tl/args.sf)*args.ns)}
     with open(f'data/simulation_details_{get_experiment_id()}.json', 'w') as f:
         json.dump(sdata, f)
 
