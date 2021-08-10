@@ -25,11 +25,13 @@ parser = argparse.ArgumentParser(description='Control variables for PC Algorithm
 parser.add_argument('--pv', default=0.02, help='Threshold p value', type=float)
 parser.add_argument('--taumin', default=2, help='Min Tau', type=int)
 parser.add_argument('--taumax', default=10, help='Max Tau', type=int)
+parser.add_argument('--vars', default=4, help='Max Tau', type=int)
 
 
 # Variables of interest CAREFUL!!
-variables_dim_1 = ['p_0_x_position', 'p_1_x_position', 'p_2_x_position', 'p_3_x_position']
-variables_dim_2 = ['p_0_y_position', 'p_1_y_position', 'p_2_y_position', 'p_3_y_position']
+args = parser.parse_args()
+variables_dim_1 = [f'p_{i}_x_position' for i in range(args.vars)]
+variables_dim_2 = [f'p_{i}_y_position' for i in range(args.vars)]
 
 data_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'observations.csv')
 springs_observations_path = os.path.join(os.getcwd(), 'simulations', 'data', 'springs.csv')

@@ -17,5 +17,5 @@ for json_file in results_files:
 df = pd.DataFrame(auroc_results)
 print(df.head())
 sns.lineplot(df.data_size, df.auroc)
-plt.xscale('log')
+#plt.xscale('log')
 plt.show()
