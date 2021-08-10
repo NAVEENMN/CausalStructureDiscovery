@@ -106,6 +106,9 @@ def run_spring_particle_simulation(_id=0):
     sp.add_a_spring(particle_a=0,
                     particle_b=1,
                     spring_constant=np.random.normal(3, 0.5, 1))
+    sp.add_a_spring(particle_a=2,
+                    particle_b=3,
+                    spring_constant=np.random.normal(3, 0.5, 1))
     # ********
 
     # total_time_steps: run simulation with the current configuration for total_time_steps
