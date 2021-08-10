@@ -251,11 +251,11 @@ def main():
         os.remove('data/p_values_dim_2.npy')
 
     start_time = time.time()
-    #dims = [1, 2]
-    #with Pool(4) as p:
-    #    p.map(run_pc, dims)
-    run_pc(dim=1)
-    run_pc(dim=2)
+    dims = [1, 2]
+    with Pool(4) as p:
+        p.map(run_pc, dims)
+    #run_pc(dim=1)
+    #run_pc(dim=2)
 
     with open('data/p_values_dim_1.npy', 'rb') as f1:
         p_values_dim_1 = np.load(f1)
