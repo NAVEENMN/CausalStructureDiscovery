@@ -1,5 +1,10 @@
 import os
-import matplotlib.pyplot as plt
+import json
+import logging
+import pandas as pd
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
+
 
 class Utils(object):
 
@@ -30,21 +35,7 @@ class Utils(object):
         import seaborn as sns
         sns.pairplot(observations).savefig(f"{os.getcwd()}/media/relationship.png")
 
-    @classmethod
-    def save_graph(cls, causal_graph, testing_graph, predicted_graph, step, attr=None):
-        fig, axes = plt.subplots(1, 3, figsize=(16, 8))
-        axes[0].set_title('Original Graph')
-        causal_graph.draw(axes=axes[0])
-        axes[1].set_title(f'{attr[0]} = {attr[1]}')
-        Graph.draw_graph(testing_graph, axes=axes[1])
-        axes[2].set_title('Predicted Graph')
-        Graph.draw_graph(predicted_graph, axes=axes[2])
-        # plt.show()
-        fig.savefig(os.path.join(os.getcwd(), 'tmp', f'graph_{step}.png'))
-        plt.clf()
-        plt.close(fig)
 
-
-ut = Utils()
-ut.create_gif()
-print('Done.')
+#ut = Utils()
+#ut.create_gif()
+#print('Done.')

@@ -1,12 +1,182 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import numpy as np
 import logging
 import networkx as nx
-from graph import ParticleGraph
-
+import random
+import  matplotlib.pyplot as plt
+import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+
+class Graph(object):
+    def __init__(self, nx_graph):
+        self.graph = nx_graph
+        self.node_size = 800
+        self.node_color = '#0D0D0D'
+        self.font_color = '#D9D9D9'
+        self.edge_color = '#262626'
+
+    def load_graph(self, path="data/graph.edgelist"):
+        self.graph = nx.read_edgelist(path,
+                                      create_using=nx.DiGraph)
+
+    def add_node_to_graph(self, node):
+        logging.debug(f'*** Graph: Adding a node {node}')
+        self.graph.add_node(node, value=np.random.randn())
+
+    def add_an_edge_to_graph(self, node_a, node_b, weight=None):
+        # edge is a linear function v(node_b) = v(node_a) * _w + _c
+        _w = weight if weight else random.choice([1, -1]) * np.random.normal(2, 0.5, 1)
+        _c = np.random.normal(0, 1, 1)
+        logging.info(f'*** Graph: Adding an edge {node_a}-{node_b}:{weight}')
+        self.graph.add_edge(node_a, node_b, color=self.edge_color,
+                            weight=_w.item(0),
+                            capacity=_c.item(0))
+
+    def remove_an_edge_from_graph(self, node_a, node_b):
+        logging.debug(f'*** Graph: Removing an edge {node_a}-{node_b}')
+        if self.graph.has_edge(node_a, node_b):
+            logging.debug(f'*** Graph: Removed an edge {node_a}-{node_b}')
+            self.graph.remove_edge(node_a, node_b)
+            return True
+        logging.debug(f'*** Graph: No edge {node_a}-{node_b} found')
+        return False
+
+    def get_graph(self):
+        return self.graph
+
+    def get_total_nodes(self):
+        return self.graph.number_of_nodes()
+
+    def get_node_values(self):
+        values = nx.get_node_attributes(self.graph, 'value').values()
+        return values
+
+    def get_edge_value(self, node_a, node_b):
+        return self.graph.get_edge_data(node_a, node_b)
+
+    def get_successors(self, node):
+        return list(self.graph.successors(node))
+
+    def get_node_value(self, node):
+        _nodes = self.graph.nodes()
+        return _nodes[node]['value']
+
+    def set_node_value(self, node, value):
+        attrs = {node: {'value': value}}
+        nx.set_node_attributes(self.graph, attrs)
+
+    def get_random_node(self):
+        node = None
+        if self.graph.number_of_nodes() != 0:
+            node = random.sample(self.graph.nodes(), 1)[0]
+        return node
+
+    def reset_all_nodes(self):
+        # TODO:reset all node values and edge values.
+        for node in self.get_nodes():
+            self.set_node_value(node, np.random.randn()/1000)
+
+    def get_source_nodes(self):
+        _nodes = []
+        for node in self.graph.nodes():
+            if self.graph.in_degree(node) == 0:
+                _nodes.append(node)
+        return _nodes
+
+    def get_nodes(self):
+        return self.graph.nodes()
+
+    def get_all_parents(self):
+        _parents = []
+        for node in self.graph.nodes():
+            if self.graph.out_degree(node) > 0:
+                _parents.append(node)
+        return _parents
+
+    @classmethod
+    def draw_graph(cls, _graph, axes):
+        nx.draw(_graph, nx.circular_layout(_graph),
+                with_labels=True,
+                node_size=500,
+                ax=axes)
+
+
+class ParticleGraph(Graph):
+    """
+    Keeps track of particles and springs as a graph system.
+    :param
+    """
+    def __init__(self):
+        super().__init__(nx.DiGraph())
+        self.particle_count = 0
+        self.spring_count = 0
+
+    def __repr__(self):
+        return self.get_graph()
+
+    def get_node_names(self):
+        return self.get_nodes()
+
+    def get_total_number_of_particles(self):
+        return self.particle_count
+
+    def get_total_number_of_springs(self):
+        return self.spring_count
+
+    def add_particle_node_to_graph(self, name=None):
+        _node = name if name else f'p_{self.get_total_nodes()}'
+        logging.debug(f'*** ParticleGraph: Adding a node to graph {name}')
+        self.add_node_to_graph(_node)
+        self.particle_count += 1
+        return _node
+
+    def add_spring_to_graph(self, particle_a, particle_b, spring_constant):
+        x = particle_a
+        y = particle_b
+        logging.debug(f'*** ParticleGraph: Adding a spring {particle_a}-{particle_b}:{spring_constant}')
+        self.spring_count += 1
+        self.add_an_edge_to_graph(x, y, weight=spring_constant)
+
+    def remove_spring_from_graph(self, node_a, node_b):
+        if self.remove_an_edge_from_graph(node_a=node_a, node_b=node_b):
+            self.spring_count -= 1
+            return True
+        return False
+
+    def add_springs_to_graph(self, spring_constant_matrix):
+        # Since spring constant matrix is symmetric nullify lower half
+        spring_constant_matrix = np.tril(spring_constant_matrix, k=0)
+        for i in range(self.particle_count):
+            for j in range(self.particle_count):
+                if spring_constant_matrix[i][j] != 0:
+                    logging.info(f'*** ParticleGraph: Adding spring between particle_{i} and particle_{j} with k={spring_constant_matrix[i][j]} ')
+                    self.add_spring_to_graph(particle_a=f'p_{i}',
+                                             particle_b=f'p_{j}',
+                                             spring_constant=spring_constant_matrix[i][j])
+
+    def show(self):
+        colors = nx.get_edge_attributes(self.graph, 'color').values()
+        weights = nx.get_edge_attributes(self.graph, 'weight').values()
+        nx.draw(self.graph,
+                pos=nx.circular_layout(self.graph),
+                with_labels=True,
+                edge_color=list(colors),
+                width=list(weights),
+                node_size=500)
+        plt.show()
+
+    def draw(self, axes):
+        colors = nx.get_edge_attributes(self.graph, 'color').values()
+        weights = nx.get_edge_attributes(self.graph, 'weight').values()
+        nx.draw(self.graph,
+                pos=nx.circular_layout(self.graph),
+                with_labels=True,
+                edge_color=list(colors),
+                width=list(weights),
+                node_size=500,
+                ax=axes)
 
 
 class Environment(object):
@@ -64,14 +234,14 @@ class SpringSystem(Environment):
         self.p_graph.get_node_names()
 
     def add_particles(self, num_of_particles=0):
-        logging.debug(f'Creating a spring particle system with {num_of_particles} particles')
+        logging.debug(f'*** SpringSystem: Creating a spring particle system with {num_of_particles} particles')
         for _ in range(num_of_particles):
             self.p_graph.add_particle_node_to_graph()
         self.num_particles = self.p_graph.get_total_number_of_particles()
-        logging.debug(f'Initialized springs to 0.0')
+        logging.debug(f'*** SpringSystem: Initialized springs to 0.0')
         # initialize springs
         self.k = np.zeros((self.num_particles, self.num_particles))
-        logging.info(f'Created a spring particle system with {num_of_particles} particles')
+        logging.info(f'*** SpringSystem: Created a spring particle system with {num_of_particles} particles')
 
     def show_graph(self):
         self.p_graph.show()
@@ -79,7 +249,7 @@ class SpringSystem(Environment):
     def add_a_spring(self, particle_a, particle_b, spring_constant):
         num_of_particles = self.p_graph.get_total_number_of_particles()
         if num_of_particles == 0:
-            logging.error('Environment has no particles to add a spring')
+            logging.error('*** SpringSystem: Environment has no particles to add a spring')
             return
 
         self.k[particle_a][particle_b] = spring_constant
@@ -87,18 +257,18 @@ class SpringSystem(Environment):
         self.p_graph.add_spring_to_graph(particle_a=particle_a,
                                          particle_b=particle_b,
                                          spring_constant=spring_constant)
-        logging.info(f'Added spring to a {particle_a} {particle_b} : {spring_constant}')
+        logging.info(f'*** SpringSystem: Added spring to a {particle_a} {particle_b} : {spring_constant}')
 
     def add_springs(self, spring_constants_matrix):
 
         num_of_particles = self.p_graph.get_total_number_of_particles()
 
         if num_of_particles == 0:
-            logging.error('Environment has no particles to add a spring')
+            logging.error('*** SpringSystem: Environment has no particles to add a spring')
             return
 
         if spring_constants_matrix.shape != (num_of_particles, num_of_particles):
-            logging.error('Shapes of spring constants matrix and number of particles wont match')
+            logging.error('*** SpringSystem: Shapes of spring constants matrix and number of particles wont match')
             return
 
         # Establish symmetry
@@ -108,12 +278,12 @@ class SpringSystem(Environment):
         np.fill_diagonal(spring_constants_matrix, 0)
         self.k = spring_constants_matrix
         self.p_graph.add_springs_to_graph(spring_constant_matrix=self.k)
-        logging.info(f'Added springs to a spring particle system')
+        logging.info(f'*** SpringSystem: Added springs to a spring particle system')
 
     def remove_spring(self, particle_a, particle_b):
         self.k[particle_a][particle_b] = 0.0
         self.p_graph.remove_spring_from_graph(node_a=particle_a, node_b=particle_b)
-        logging.info(f'Removed Spring p_{particle_a} p_{particle_b}')
+        logging.info(f'*** SpringSystem: Removed Spring p_{particle_a} p_{particle_b}')
 
     def remove_all_springs(self):
         num_of_particles = self.p_graph.get_total_number_of_particles()
@@ -128,7 +298,7 @@ class SpringSystem(Environment):
     def simulate(self, total_time_steps, period, sample_freq, observations, spring_observations, traj_id):
         num_particles = self.p_graph.get_total_number_of_particles()
         if num_particles == 0:
-            logging.warning('Nothing to simulate, add particles')
+            logging.warning('*** SpringSystem: Nothing to simulate, add particles')
             return
 
         def get_init_pos_velocity():
@@ -144,7 +314,7 @@ class SpringSystem(Environment):
             _position = np.random.randn(2, num_particles) * loc_std
             # sample initial velocity from normal distribution
             _mv = np.random.normal(self.init_velocity_mean_sd[0], 0.01, 1)
-            logging.info(f'Initial velocity set to {_mv}')
+            logging.info(f'*** SpringSystem: xInitial velocity set to {_mv}')
             _velocity = (_mv + np.random.randn(2, num_particles)) * self.init_velocity_mean_sd[1]
             # Compute magnitude of this velocity vector and format to right shape
             #v_norm = np.linalg.norm(_position, axis=0)
@@ -246,6 +416,7 @@ class SpringSystem(Environment):
                     observation[f'p_{particle_id}_y_velocity'] = velocity[i][j]
 
         # Calculate and store distance
+        """
         x_cords, y_cords = positions[0, :], positions[1, :]
         x_diffs = np.subtract.outer(x_cords, x_cords)
         y_diffs = np.subtract.outer(y_cords, y_cords)
@@ -253,10 +424,11 @@ class SpringSystem(Environment):
         for i in range(len(distance_matrix)):
             for j in range(len(distance_matrix[0])):
                 observation[f'p_{i}_{j}_distance'] = distance_matrix[i][j]
-
+        """
         for i in range(self.num_particles):
             for j in range(self.num_particles):
-                sp_observation[f's_{i}_{j}'] = springs[i][j]
+                if i != j:
+                    sp_observation[f's_{i}_{j}'] = springs[i][j]
 
         observation[f'trajectory_step'] = f'{traj_id}_{step}'
         sp_observation[f'trajectory_step'] = f'{traj_id}_{step}'
